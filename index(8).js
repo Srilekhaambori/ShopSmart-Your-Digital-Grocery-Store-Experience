@@ -1,200 +1,183 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom'; // Import useParams to get the product ID from the URL
 import styled from 'styled-components';
-import AdminNavabar from '../AdminNavbar'
+import ProductItem from '../ProductItem';
+import Header from '../Header';
 
-
-// Styled components (you can adjust styles as needed)
-const Container = styled.div`
-  max-width: 700px;
-  margin: 5vh auto;
+const ProductsContainer = styled.div`
+  margin-top: 10vh;
+  padding: 20px;
   text-align: start;
-  background-color:skyblue;
 `;
 
 const Heading = styled.h2`
   font-size: 24px;
-  font-weight: bold;
-  color: rgb(62, 62, 62);
+  color: #333;
   margin-bottom: 20px;
+  margin-top: 40px;
 `;
 
-const Form = styled.form`
+const StyledList = styled.ul`
+  list-style: none;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0;
 `;
 
-const FormGroup = styled.div`
+const ListItem = styled.li`
+  margin-bottom: 20px;
+  max-width: 270px;
+`;
+
+const SearchBar = styled.input`
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   margin-bottom: 20px;
 `;
 
-const Label = styled.label`
-  font-weight: bold;
-  margin-bottom: 8px;
-`;
-
-const Input = styled.input`
+const CategoryFilter = styled.select`
+  width: 100%;
   padding: 10px;
+  font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 16px;
-  width: 100%;
+  margin-bottom: 20px;
 `;
 
-const Textarea = styled.textarea`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  width: 100%;
-  min-height: 100px;
-`;
-
-const Button = styled.button`
-  background-color: blue;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: orangered;
+const FiltersContainer = styled.div`
+  display:flex;
+  align-items:center;
+  gap:30px;
+  margin-top:30px;
+  @media and (max-width:768px){
+    flex-direction:column;
   }
-`;
+`
 
-const UpdateProduct = () => {
-  const { id } = useParams(); // Get the product ID from the URL
-
-  const [formData, setFormData] = useState({
-    productname: '',
-    description: '',
-    price: '',
-    image: '',
-    category: '',
-    countInStock: '',
-    rating: '',
-  });
-
-  const navigate = useNavigate()
+const Products = () => {
+  const api = 'http://localhost:5100/products';
+  const [products, setProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all'); // State for selected category
 
   useEffect(() => {
-    // Fetch the existing product data
-    axios.get(`http://localhost:5100/products/${id}`)
-      .then((response) => {
-        // Populate the form with the existing product data
-        setFormData(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching product data:', error);
-      });
-  }, [id]);
+    // Fetch products from the API and update the state
+    fetch(api)
+      .then((response) => response.json())
+      .then((data) => setProducts(data))
+      .catch((error) => console.error('Error fetching products:', error));
+  }, []);
 
-  const { productname, description, price, image, category, countInStock, rating } = formData;
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Function to handle changes in the search input
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Function to handle changes in the category filter
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+  };
 
-    try {
-      const response = await axios.put(`http://localhost:5100/products/${id}`, formData);
+  // Function to filter products based on the selected category and search query
+  const filteredProducts = products.filter((product) => {
+    const productNameMatchesSearch =
+      product.productname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      searchQuery.trim() === '';
 
-      console.log('Product updated:', response.data);
-      navigate('/admin/all-products')
-
-      // Handle any other actions upon successful product update
-
-    } catch (error) {
-      console.error('Error updating product:', error);
-      // Handle errors here, e.g., show an error message to the user
+    if (selectedCategory === 'all') {
+      return productNameMatchesSearch;
+    } else {
+      return (
+        productNameMatchesSearch && product.category.toLowerCase() === selectedCategory
+      );
     }
-  };
+  });
+
+  // Get unique category values from products
+  const categories = [
+    ...new Set(products.map((product) => product.category.toLowerCase())),
+  ];
+
+  // Add 'All' as an option to select all categories
+  categories.unshift('all');
 
   return (
-   <div>
-    <AdminNavabar/>
-    <h1 className='text-center'>Update Product</h1>
-     <Container>
-      <Form onSubmit={handleSubmit} className='shadow p-3'>
-        {/* Render form fields with existing data */}
-        <FormGroup>
-          <Label htmlFor="productname">Product Name</Label>
-          <Input
-            type="text"
-            name="productname"
-            value={productname}
-            onChange={handleChange}
-            placeholder="Enter product name"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="rating">Rating</Label>
-          <Input
-            type="number"
-            name="rating"
-            value={rating}
-            onChange={handleChange}
-            placeholder="Enter product rating"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="price">Price</Label>
-          <Input
-            type="number"
-            name="price"
-            value={price}
-            onChange={handleChange}
-            placeholder="Enter product price"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="image">Image URL</Label>
-          <Input
-            type="text"
-            name="image"
-            value={image}
-            onChange={handleChange}
-            placeholder="Enter image URL"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="category">Category</Label>
-          <Input
-            type="text"
-            name="category"
-            value={category}
-            onChange={handleChange}
-            placeholder="Enter category"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="countInStock">Count in Stock</Label>
-          <Input
-            type="number"
-            name="countInStock"
-            value={countInStock}
-            onChange={handleChange}
-            placeholder="Enter count in stock"
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            name="description"
-            value={description}
-            onChange={handleChange}
-            placeholder="Enter product description"
-          />
-        </FormGroup>
-        <Button type="submit">Update Product</Button>
-      </Form>
-    </Container>
-   </div>
+    <div>
+      <Header/>
+    <ProductsContainer>
+      <div id="carouselExampleIndicators" className="carousel slide" data-ride="carousel">
+        <ol className="carousel-indicators">
+          <li data-target="#carouselExampleIndicators" data-slide-to="0" className="active"></li>
+          <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+          <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+        </ol>
+        <div className="carousel-inner">
+          <div className="carousel-item active">
+            {/* <img className="d-block w-100" src="https://img.freepik.com/premium-vector/vegetable-grocery-delivery-promotion-facebook-cover-web-banner-social-media-post-template_584651-68.jpg" alt="First slide" /> */}
+          </div>
+          <div className="carousel-item">
+            <img className="d-block w-100" src="https://img.freepik.com/free-vector/beautiful-banner-floral-leaves-template_21799-2812.jpg?size=626&ext=jpg&ga=GA1.2.1493657015.1690885278&semt=ais" alt="Second slide" />
+          </div>
+          <div className="carousel-item">
+            <img className="d-block w-100" src="https://img.freepik.com/free-psd/spring-sale-social-media-cover-template_47987-15231.jpg?size=626&ext=jpg&ga=GA1.2.1493657015.1690885278&semt=ais" alt="Third slide" />
+          </div>
+        </div>
+        <a className="carousel-control-prev" role="button" data-slide="prev">
+          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span className="sr-only">Previous</span>
+        </a>
+        <a className="carousel-control-next" role="button" data-slide="next">
+          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+          <span className="sr-only">Next</span>
+        </a>
+      </div>
+      <FiltersContainer style={{gap:'20px'}}>
+        <div className='w-100'>
+        <h3>Search By Product Name</h3>
+      <SearchBar
+        type="text"
+        placeholder="Search by product name"
+        value={searchQuery}
+        onChange={handleSearchChange}
+      />
+        </div>
+
+      {/* Create the category filter dropdown */}
+      <div className='w-100'>
+      <h3>Filter By Category</h3>
+      <CategoryFilter onChange={handleCategoryChange} value={selectedCategory}>
+        {categories.map((category, index) => (
+          <option key={index} value={category}>
+            {category}
+          </option>
+        ))}
+      </CategoryFilter></div>
+      </FiltersContainer>
+
+      <Heading>Products</Heading>
+      <StyledList>
+        {filteredProducts.map((product) => (
+          <ListItem key={product._id}>
+            <ProductItem
+              id={product._id}
+              img={product.image}
+              name={product.productname}
+              description={product.description}
+              price={product.price}
+            />
+          </ListItem>
+        ))}
+      </StyledList>
+    </ProductsContainer>  
+    </div>
   );
 };
 
-export default UpdateProduct;
+export default Products;
+
+
+
+

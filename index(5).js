@@ -1,77 +1,55 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookies';
-import styled from 'styled-components';
-import Header from '../Header';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Cookies from 'js-cookies'
+import {
+  ProductContainer,
+  ProductName,
+  ProductDescription,
+  ProductPrice,
+  ProductImage,
+  Button,
+  ButtonContainer,
+} from "./styledComponents";
 
-// Styled components
-const Container = styled.div`
-  padding: 20px;
-  margin-top: 10vh;
-  text-align: start;
-`;
+const ProductItem = ({ id, name, description, price, img }) => {
 
-const Heading = styled.h2`
-  font-size: 24px;
-  margin-bottom: 16px;
-`;
+  const handleAddToCart = async () => {
+    const userId = Cookies.getItem("userId"); // Get the user ID from cookies or your authentication system
 
-const OrderList = styled.ul`
-  list-style: none;
-  padding: 0;
-`;
-
-const OrderItem = styled.li`
-  border: 1px solid #ccc;
-  padding: 16px;
-  margin-bottom: 16px;
-`;
-
-const Strong = styled.strong`
-  font-weight: bold;
-`;
-
-const History = () => {
-  const userId = Cookies.getItem('userId');
-  const [orders, setOrders] = useState([]);
-
-  useEffect(() => {
-    axios
-      .get(`http://localhost:5100/my-orders/${userId}`)
-      .then((response) => {
-        // Assuming response.data is an array of orders
-        setOrders(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching orders:', error);
+    try {
+      const response = await axios.post("http://localhost:5100/add-to-cart", {
+        userId,
+        productId: id,
       });
-  }, [userId]); // Include userId in the dependency array to re-fetch orders when it changes
+
+      // Handle success here, you can show a success message or update the UI.
+      alert('Product Added to cart!');
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      // Handle error here, show an error message or log it.
+    }
+  };
 
   return (
-    <div>
-      <Header/>
-      <Container>
-      <h1 className='text-center'>My History</h1>
-      <OrderList>
-        {orders.map((order) => {
-          const isDelivered = order.status === 'Delivered' || order.status === 'Canceled';
-
-          return isDelivered ? (
-            <OrderItem key={order._id} style={{ border: order.status === 'Delivered' ? '1px solid green' : '1px solid red' }}>
-              <Strong>Order ID:</Strong> {order._id} <br />
-              <Strong>Name:</Strong> {order.firstname} {order.lastname} <br />
-              <Strong>Phone:</Strong> {order.phone} <br />
-              <Strong>Date:</Strong> {order.createdAt} <br />
-              <Strong>Price:</Strong> {order.price} <br />
-              <Strong>Status:</Strong> {order.status} <br />
-              <Strong>Payment Method:</Strong> {order.paymentMethod} <br />
-            </OrderItem>
-          ) : null;
-        })}
-      </OrderList>
-    </Container>
-    </div>
+    <ProductContainer>
+      <ProductImage src={img} alt={name} />
+      <ProductName>{name}</ProductName>
+      <ProductPrice>${price}</ProductPrice>
+      <ButtonContainer>
+        <Link to={`/order-details/${id}`} className="btn btn-primary" style={{borderRadius:'0'}}>Buy Now</Link>
+        <Button onClick={handleAddToCart}>Add to Cart</Button>
+      </ButtonContainer>
+      {/* <div>
+        <label>Quantity: </label>
+        <input
+          type="number"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+        />
+      </div> */}
+    </ProductContainer>
   );
 };
 
-export default History;
+export default ProductItem;

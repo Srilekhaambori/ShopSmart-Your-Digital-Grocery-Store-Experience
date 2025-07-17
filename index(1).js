@@ -1,213 +1,201 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { Container, Form, Button, Card } from 'react-bootstrap';
+import { Link, useNavigate, } from 'react-router-dom';
 import Cookies from 'js-cookies'
 import Header from '../Header';
 
-const FormContainer = styled.div`
-  text-align: start;
-  width: 600px;
-  margin: 12vh auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  
-  @media screen and (max-width: 768px) {
-    width: 100%;
-  }
-`;
+const commonFields = [
+    { controlId: 'email', label: 'Email', type: 'email' },
+    { controlId: 'password', label: 'Password', type: 'password' },
+];
 
-
-const FormHeader = styled.h2`
-  font-size: 1.5rem;
-  text-align: center;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 20px;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-`;
-
-const Checkout = () => {
+const Login = () => {
     const [formData, setFormData] = useState({
-        firstname: '',
-        lastname: '',
-        phone: '',
-        quantity: '',
-        paymentMethod: 'cod',
-        address: '',
+        email: '',
+        password: '',
     });
-    const [productDetails, setProductDetails] = useState({})
 
-    const { id } = useParams();
+    const navigate = useNavigate();
+    const token = Cookies.getItem('jwtToken');
+    const adminToken = localStorage.getItem('adminJwtToken');
 
     useEffect(() => {
-        // Fetch product data using Axios
-        axios.get(`http://localhost:5100/products/${id}`)
-            .then((response) => {
-                // Assuming that response.data contains the product information
-                const productData = response.data;
-
-                // Update the component state with the received product data
-                setProductDetails({
-                    ...formData,
-                    // Assuming that you have fields like name, price, etc. in your product data
-                    productName: productData.productname,
-                    price: productData.price,
-                    // Include other fields as needed
-                });
-            })
-            .catch((error) => {
-                console.error('Error fetching product data:', error);
-            });
-    }, [id]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-    };
+        console.log(adminToken)
+        if (token) {
+            navigate('/'); // Redirect to home if token exists
+        } else if (adminToken) {
+            navigate('/admin/all-products'); // Redirect to admin if an admin token exists
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const userId = Cookies.getItem('userId')
-        const price = productDetails.price;
-        const productname = productDetails.productname;
-        const formDetails = { ...formData, user: userId, productId: id, price, productname }
-
         try {
-            const response = await axios.post('http://localhost:5100/orders', formDetails);
-            alert('Order created',response);
-            setFormData({
-                firstname: '',
-                lastname: '',
-                phone: '',
-                paymentMethod: '', // You can set this to an empty string or a default value
-                address: '',
-              });
-            // Reset the form or perform other actions upon success
+            const response = await fetch('http://localhost:5100/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.token) {
+                    Cookies.setItem('jwtToken', data.token, { expires: 30 });
+                    Cookies.setItem('userId', data.user._id);
+                    Cookies.setItem('userName', data.user.firstname);
+                    navigate('/');
+                    alert('login Successfull')
+                } else if (data.jwtToken) {
+                    localStorage.setItem('adminJwtToken', data.jwtToken, { expires: 30 });
+                    Cookies.setItem('userName', data.user.firstname);
+                    navigate('/admin/dashboard');
+                }
+            } else {
+                alert("Email or Password didn't match");
+            }
         } catch (error) {
-            console.error('Error creating order:', error);
+            alert('Error during login:', error);
         }
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({ ...prevData, [name]: value }));
+    };
+
     return (
-       <div>
-        <Header/>
-         <FormContainer>
-            <FormHeader>Order Details</FormHeader>
-            <form onSubmit={handleSubmit}>
-                <FormGroup>
-                    <Label>First Name:</Label>
-                    <Input
-                        type="text"
-                        name="firstname"
-                        placeholder="Enter your first name"
-                        value={formData.firstname}
-                        onChange={handleChange}
-                        required
-                    />
-                </FormGroup>
-                <FormGroup>
-                    <Label>Last Name:</Label>
-                    <Input
-                        type="text"
-                        name="lastname"
-                        placeholder="Enter your last name"
-                        value={formData.lastname}
-                        onChange={handleChange}
-                        required
-                    />
-                </FormGroup>
-
-                <FormGroup>
-                    <Label>Phone:</Label>
-                    <Input
-                        type="number"
-                        name="phone"
-                        placeholder="Enter your phone number"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                    />
-                </FormGroup>
-
-                <FormGroup>
-                    <Label>Quantity:</Label>
-                    <Input
-                        type="text"
-                        name="quantity"
-                        placeholder="Enter the quantity"
-                        value={formData.quantity}
-                        onChange={handleChange}
-                    />
-                </FormGroup>
-
-                <FormGroup>
-                    <Label>Address:</Label>
-                    <textarea
-                        type="text"
-                        rows={5}
-                        style={{ width: '100%',border:"1px solid grey " }}
-                        name="address"
-                        placeholder="Enter your address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        required
-                    />
-                </FormGroup>
-
-                <FormGroup>
-                    <Label>Payment Method:</Label>
-                    <Select
-                        name="paymentMethod"
-                        value={formData.paymentMethod}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="cod">Cash on Delivery (COD)</option>
-                        <option value="credit">Credit Card</option>
-                        <option value="debit">Debit Card</option>
-                    </Select>
-                </FormGroup>
-
-
-                <Button type="submit">Submit</Button>
-            </form>
-        </FormContainer>
-       </div>
+<div>
+    <Header/>
+<Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', paddingTop: '10vh' }}>
+            <Card className="shadow p-4" style={{ width: '400px' }}>
+                <Card.Body>
+                    <h2 className="mb-4">Login</h2>
+                    <Form onSubmit={handleSubmit}>
+                        {commonFields.map((field) => (
+                            <Form.Group style={{ textAlign: 'start', marginBottom: '10px' }} controlId={field.controlId} key={field.controlId}>
+                                <Form.Label>{field.label}</Form.Label>
+                                <Form.Control
+                                    type={field.type}
+                                    placeholder={`Enter ${field.label.toLowerCase()}`}
+                                    name={field.controlId}
+                                    value={formData[field.controlId]}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </Form.Group>
+                        ))}
+                        <Button type="submit" className="btn-primary w-100 mt-3">Login</Button>
+                    </Form>
+                    <p >
+                        Don't have an account? <Link to="/signup">Sign Up</Link>
+                    </p>
+                </Card.Body>
+            </Card>
+        </Container>
+</div>
     );
 };
 
-export default Checkout;
+export default Login;
+
+
+
+
+// import React, { useEffect, useState } from 'react';
+// import { Container, Form, Button, Card } from 'react-bootstrap';
+// import { Link, useNavigate } from 'react-router-dom';
+// import Cookies from 'js-cookie';
+
+// const commonFields = [
+//     { controlId: 'email', label: 'Email', type: 'email' },
+//     { controlId: 'password', label: 'Password', type: 'password' },
+// ];
+
+// const Login = () => {
+//     const [formData, setFormData] = useState({
+//         email: '',
+//         password: '',
+//     });
+
+//     const navigate = useNavigate();
+
+//     useEffect(() => {
+//         const token = Cookies.getItem('jwtToken');
+//         const adminToken = Cookies.getItem('adminJwtToken');
+//         if (token !== null) {
+//             navigate('/'); // Redirect to home if a user token exists
+        // } else if (adminToken !== null) {
+        //     navigate('/admin/all-products'); // Redirect to admin if an admin token exists
+        // }
+//     }, [navigate]);
+
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+//         try {
+//             const response = await fetch('http://localhost:5100/login', {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                 },
+//                 body: JSON.stringify(formData),
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+
+                // if (data.token) {
+                //     Cookies.setItem('jwtToken', data.token, { expires: 30 });
+                //     Cookies.setItem('userId', data.user._id);
+                //     Cookies.setItem('userName', data.user.firstname);
+                //     navigate('/');
+                // } else if (data.jwtToken) {
+                //     Cookies.setItem('adminJwtToken', data.jwtToken, { expires: 30 });
+                //     Cookies.setItem('userName', data.user.firstname);
+                //     navigate('/admin/all-products');
+                // }
+//             } else {
+//                 alert("Email or Password didn't match");
+//             }
+//         } catch (error) {
+//             alert('Error during login: ' + error); // Corrected alert message
+//         }
+//     };
+
+//     const handleInputChange = (e) => {
+//         const { name, value } = e.target;
+//         setFormData((prevData) => ({ ...prevData, [name]: value }));
+//     };
+
+//     return (
+//         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', paddingTop: '10vh' }}>
+//             <Card className="shadow p-4" style={{ width: '400px' }}>
+//                 <Card.Body>
+//                     <h2 className="mb-4">Login</h2>
+//                     <Form onSubmit={handleSubmit}>
+//                         {commonFields.map((field) => (
+//                             <Form.Group style={{ textAlign: 'start', marginBottom: '10px' }} controlId={field.controlId} key={field.controlId}>
+//                                 <Form.Label>{field.label}</Form.Label>
+//                                 <Form.Control
+//                                     type={field.type}
+//                                     placeholder={`Enter ${field.label.toLowerCase()}`}
+//                                     name={field.controlId}
+//                                     value={formData[field.controlId]}
+//                                     onChange={handleInputChange}
+//                                     required
+//                                 />
+//                             </Form.Group>
+//                         ))}
+//                         <Button type="submit" className="btn-primary w-100 mt-3">Login</Button>
+//                     </Form>
+//                     <p>
+//                         Don't have an account? <Link to="/signup">Sign Up</Link>
+//                     </p>
+//                 </Card.Body>
+//             </Card>
+//         </Container>
+//     );
+// };
+
+// export default Login;
