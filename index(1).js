@@ -1,262 +1,213 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import AdminNavabar from '../AdminNavbar'
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
+import Cookies from 'js-cookies'
+import Header from '../Header';
 
-
-// Styled components
-const Container = styled.div`
-  max-width: 800px;
-  margin: 5vh auto;
-  padding: 20px;
+const FormContainer = styled.div`
   text-align: start;
-
+  width: 600px;
+  margin: 12vh auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   
-`;
-
-const Heading = styled.h2`
-  font-size: 24px;
-  font-weight: bold;
-  color: rgb(62, 62, 62);
-  margin-bottom: 20px;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-//   border:1px solid red;
-background-color:skyblue;
-
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 20px;
-  display:flex;
-  flex-direction:column;
-`;
-
-const Label = styled.label`
-  font-weight: bold;
-  margin-bottom: 8px;
-`;
-
-const Input = styled.input`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  width:100%;
-`;
-
-const Textarea = styled.textarea`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-`;
-
-const Select = styled.select`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-`;
-
-
-const Button = styled.button`
-  background-color: teal;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: blue;
+  @media screen and (max-width: 768px) {
+    width: 100%;
   }
 `;
 
 
+const FormHeader = styled.h2`
+  font-size: 1.5rem;
+  text-align: center;
+`;
 
-const InputRowsContainer = styled.div`
-    display:flex;
-    width:100;
-    align-items:center;
-    @media screen and (max-width:768px){
-        flex-direction:column;
-    }
-`
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
 
-const AddProduct = () => {
-  const [formData, setFormData] = useState({
-    productname: '',
-    description: '',
-    price: '',
-    image: '',
-    category: '',
-    countInStock: '',
-    rating: '',
-  });
+const Label = styled.label`
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+`;
 
-  const [categories, setCategories] = useState([]);
-  
-  useEffect(() => {
-    // Fetch available categories from your API
-    axios.get('http://localhost:5100/api/categories')
-      .then((response) => {
-        setCategories(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching categories:', error);
-      });
-  }, []);
+const Input = styled.input`
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+`;
 
-  const { productname, description, price, image, category, countInStock, rating } = formData;
+const Select = styled.select`
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+`;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    // Update the category state directly
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
-  };
+const Button = styled.button`
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+`;
+
+const Checkout = () => {
+    const [formData, setFormData] = useState({
+        firstname: '',
+        lastname: '',
+        phone: '',
+        quantity: '',
+        paymentMethod: 'cod',
+        address: '',
+    });
+    const [productDetails, setProductDetails] = useState({})
+
+    const { id } = useParams();
+
+    useEffect(() => {
+        // Fetch product data using Axios
+        axios.get(`http://localhost:5100/products/${id}`)
+            .then((response) => {
+                // Assuming that response.data contains the product information
+                const productData = response.data;
+
+                // Update the component state with the received product data
+                setProductDetails({
+                    ...formData,
+                    // Assuming that you have fields like name, price, etc. in your product data
+                    productName: productData.productname,
+                    price: productData.price,
+                    // Include other fields as needed
+                });
+            })
+            .catch((error) => {
+                console.error('Error fetching product data:', error);
+            });
+    }, [id]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value,
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const userId = Cookies.getItem('userId')
+        const price = productDetails.price;
+        const productname = productDetails.productname;
+        const formDetails = { ...formData, user: userId, productId: id, price, productname }
+
+        try {
+            const response = await axios.post('http://localhost:5100/orders', formDetails);
+            alert('Order created',response);
+            setFormData({
+                firstname: '',
+                lastname: '',
+                phone: '',
+                paymentMethod: '', // You can set this to an empty string or a default value
+                address: '',
+              });
+            // Reset the form or perform other actions upon success
+        } catch (error) {
+            console.error('Error creating order:', error);
+        }
+    };
+
+    return (
+       <div>
+        <Header/>
+         <FormContainer>
+            <FormHeader>Order Details</FormHeader>
+            <form onSubmit={handleSubmit}>
+                <FormGroup>
+                    <Label>First Name:</Label>
+                    <Input
+                        type="text"
+                        name="firstname"
+                        placeholder="Enter your first name"
+                        value={formData.firstname}
+                        onChange={handleChange}
+                        required
+                    />
+                </FormGroup>
+                <FormGroup>
+                    <Label>Last Name:</Label>
+                    <Input
+                        type="text"
+                        name="lastname"
+                        placeholder="Enter your last name"
+                        value={formData.lastname}
+                        onChange={handleChange}
+                        required
+                    />
+                </FormGroup>
+
+                <FormGroup>
+                    <Label>Phone:</Label>
+                    <Input
+                        type="number"
+                        name="phone"
+                        placeholder="Enter your phone number"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                    />
+                </FormGroup>
+
+                <FormGroup>
+                    <Label>Quantity:</Label>
+                    <Input
+                        type="text"
+                        name="quantity"
+                        placeholder="Enter the quantity"
+                        value={formData.quantity}
+                        onChange={handleChange}
+                    />
+                </FormGroup>
+
+                <FormGroup>
+                    <Label>Address:</Label>
+                    <textarea
+                        type="text"
+                        rows={5}
+                        style={{ width: '100%',border:"1px solid grey " }}
+                        name="address"
+                        placeholder="Enter your address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        required
+                    />
+                </FormGroup>
+
+                <FormGroup>
+                    <Label>Payment Method:</Label>
+                    <Select
+                        name="paymentMethod"
+                        value={formData.paymentMethod}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="cod">Cash on Delivery (COD)</option>
+                        <option value="credit">Credit Card</option>
+                        <option value="debit">Debit Card</option>
+                    </Select>
+                </FormGroup>
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      if (!productname || !description || !price || !image || !category || !countInStock || !rating) {
-        return alert('Please fill in all required fields');
-      }
-
-      const response = await axios.post('http://localhost:5100/add-products', {
-        productname,
-        description,
-        price,
-        image,
-        category,
-        countInStock,
-        rating,
-      });
-      alert('item added successfully')
-      console.log('Product added:', response.data);
-
-      // Optionally, you can clear the form fields here
-      setFormData({
-        productname: '',
-        description: '',
-        price: '',
-        image: '',
-        category: '',
-        countInStock: '',
-        rating: '',
-      });
-
-      // Handle any other actions upon successful product addition
-
-    } catch (error) {
-      console.error('Error adding product:', error);
-      // Handle errors here, e.g., show an error message to the user
-    }
-  };
-
-  return (
-   <div>
-    <AdminNavabar/>
-    <h1>Add Product</h1>
-     <Container>
-      <Form onSubmit={handleSubmit} className='shadow p-3'>
-        <InputRowsContainer style={{gap:'10px'}} >
-        <FormGroup className='w-100'>
-          <Label htmlFor="productname">Product Name</Label>
-          <Input
-            type="text"
-            name="productname"
-            value={productname}
-            onChange={handleChange}
-            placeholder="Enter product name"
-          />
-        </FormGroup>
-        <FormGroup className='w-100'>
-          <Label htmlFor="rating">Rating</Label>
-          <Input
-            type="number"
-            name="rating"
-            value={rating}
-            onChange={handleChange}
-            placeholder="Enter product rating"
-          />
-        </FormGroup>
-        
-        <FormGroup className='w-100'>
-          <Label htmlFor="price">Price</Label>
-          <Input
-            type="number"
-            name="price"
-            value={price}
-            onChange={handleChange}
-            placeholder="Enter product price"
-          />
-        </FormGroup>
-        </InputRowsContainer>
-        <InputRowsContainer style={{gap:'10px'}} >
-        <FormGroup className='w-100'>
-          <Label htmlFor="image">Image URL</Label>
-          <Input
-            type="text"
-            name="image"
-            value={image}
-            onChange={handleChange}
-            placeholder="Enter image URL"
-          />
-        </FormGroup>
-        <FormGroup className='w-100'>
-          <Label htmlFor="category">Category</Label>
-          <Select
-  name="category"
-  id="category"
-  value={category}
-  onChange={handleChange}
->
-  <option value="">Select Category</option>
-  <option value="fruits">Fruits</option>
-  <option value="Vegetables">Vegetables</option>
-  <option value="Dairy">Dairy</option>
-  <option value="snacks">snacks</option>
-  <option value="dryfruits">Dry Fruits</option>
-  <option value="Beverages">Beverages</option>
-  <option value="Meat and Seafood">Meat and Seafood</option>
-</Select>
-
-
-        </FormGroup>
-        <FormGroup className='w-100'>
-          <Label htmlFor="countInStock">Count in Stock</Label>
-          <Input
-            type="number"
-            name="countInStock"
-            value={countInStock}
-            onChange={handleChange}
-            placeholder="Enter count in stock"
-          />
-        </FormGroup>
-        </InputRowsContainer>
-        <FormGroup className='w-100'>
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            name="description"
-            value={description}
-            onChange={handleChange}
-            placeholder="Enter product description"
-          />
-        </FormGroup>
-        <Button type="submit">Add Product</Button>
-      </Form>
-    </Container>
-   </div>
-  );
+                <Button type="submit">Submit</Button>
+            </form>
+        </FormContainer>
+       </div>
+    );
 };
 
-export default AddProduct;
+export default Checkout;

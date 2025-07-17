@@ -1,88 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import Card from 'react-bootstrap/Card';
-import Button from 'react-bootstrap/Button';
-import './style.css'; // Import your custom CSS for styling
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import AdminNavabar from '../AdminNavbar'
+import React from 'react';
+import styled from 'styled-components';
 
-const Dashboard = () => {
-  const [data, setData] = useState({
-    products: 0,
-    users: 0,
-    orders: 0,
-  });
+const FooterContainer = styled.footer`
+  background-color: #333;
+  color: #fff;
+  padding: 20px 0;
+  text-align: center;
+`;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [usersResponse, productsResponse, ordersResponse] = await Promise.all([
-          axios.get('http://localhost:5100/users'),
-          axios.get('http://localhost:5100/products'),
-          axios.get('http://localhost:5100/orders'),
-        ]);
+const FooterText = styled.p`
+  font-size: 14px;
+  opacity: 0.8;
+`;
 
-        setData({
-          users: usersResponse.data.length,
-          products: productsResponse.data.length,
-          orders: ordersResponse.data.length,
-        });
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
+const Footer = () => {
   return (
-    <div>
-      <AdminNavabar/>
-      <h1 className="text-center">Dashboard</h1>
-      <div className="dashboard container">
-
-      <div className="card-container">
-        <Card>
-          <Card.Body>
-            <Card.Title>Product Count</Card.Title>
-            <Card.Text>{data.products} Products</Card.Text>
-            <Link style={{textDecoration:'none',color:'white'}} to={'/admin/all-products'}><Button variant="primary">View Products </Button></Link>
-          </Card.Body>
-        </Card>
-
-        <Card>
-          <Card.Body>
-            <Card.Title>User Count</Card.Title>
-            <Card.Text>{data.users} Users</Card.Text>
-            <Link style={{textDecoration:'none',color:'white'}} to={'/admin/users'}><Button variant="primary">View Users </Button></Link>
-          </Card.Body>
-        </Card>
-
-        <Card>
-          <Card.Body>
-            <Card.Title>Order Count</Card.Title>
-            <Card.Text>{data.orders} Orders</Card.Text>
-            <Link style={{textDecoration:'none',color:'white'}} to="/admin/orders"><Button variant="primary">View Orders</Button></Link>
-          </Card.Body>
-        </Card>
-
-        <Card>
-          <Card.Body>
-            <Card.Title>Add Product</Card.Title>
-            <Link style={{textDecoration:'none',color:'white'}} to='/admin/add-product'><Button style={{width:'100px'}} variant="success">Add </Button></Link>
-          </Card.Body>
-        </Card>
-
-        {/* <Card>
-          <Card.Body>
-            <Card.Title>Add Category</Card.Title>
-            <Link style={{textDecoration:'none',color:'white',}} to='/admin/add-category'><Button style={{width:'100px'}} variant="success">Add </Button></Link>
-          </Card.Body>
-        </Card> */}
-      </div>
-    </div>
-    </div>
+    <FooterContainer>
+      <FooterText>&copy; 2023 Grocery Web App. All rights reserved.</FooterText>
+    </FooterContainer>
   );
 };
 
-export default Dashboard;
+export default Footer;

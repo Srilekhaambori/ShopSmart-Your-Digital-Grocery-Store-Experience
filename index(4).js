@@ -1,157 +1,97 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import styled from 'styled-components';
-import LoaderSpinner from '../../components/LoaderSpinner';
-import AdminNavbar from '../AdminNavbar';
+import 'bootstrap/dist/css/bootstrap.css';
+import { Nav, Navbar, NavDropdown } from 'react-bootstrap';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookies';
+import { useEffect, useState } from 'react';
 
-// Styled components
-const Container = styled.div`
-  text-align: start;
-`;
+const Header = () => {
+    const [isAdmin, setIsAdmin] = useState(false);
+    const token = Cookies.getItem("jwtToken");
+    const adminToken = localStorage.getItem("adminJwtToken");
 
-const Heading = styled.h1`
-  color: rgb(62, 62, 62);
-  font-size: 38px;
-  font-weight: bold;
-  margin-bottom: 20px;
-`;
+    useEffect(() => {
+        if (adminToken) {
+            setIsAdmin(true);
+        } else {
+            setIsAdmin(false);
+        }
+    }, [adminToken]);
 
-const OrderCard = styled.div`
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 20px;
-  transition: transform 0.3s ease;
-`;
+    const navigate = useNavigate();
 
-const OrderDetail = styled.p`
-  margin: 5px 0;
-`;
+    const onLogout = () => {
+        Cookies.removeItem('adminJwtToken');
+        const res = window.confirm("Are you sure you want to log out?");
+        if (res) {
+            localStorage.clear();
+            Cookies.removeItem('jwtToken');
+            navigate('/login');
+        }
+    };
 
-const Button = styled.button`
-  background-color: rgb(98, 90, 252);
-  color: #fff;
-  width: 150px;
-  margin-top: 10px;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
 
-  &:hover {
-    background-color: rgb(68, 60, 196);
-  }
 
-  &:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-`;
+    return (
+        <div>
+            {isAdmin ?
+                <Navbar fixed="top" style={{ padding: '0 20px', minHeight: '10vh', width: '100%',backgroundColor:"red" }} expand="lg" bg="light" variant="light">
+                    <Navbar.Brand><Link to='/admin/dashboard' style={{ textDecoration: 'none' }}>G-Mart</Link></Navbar.Brand>
+                    <Navbar.Toggle aria-controls="navbarSupportedContent" />
+                    <Navbar.Collapse id="navbarSupportedContent">
+                        <Nav className="mr-auto">
+                            <NavLink to="/admin/dashboard" className="nav-link">Home</NavLink>
+                            <NavLink to="/admin/all-products" className="nav-link">Products</NavLink>
+                            <NavLink to="/admin/orders" className="nav-link">Orders</NavLink>
+                            <NavLink to="/admin/users" className="nav-link">Users</NavLink>
 
-const Orders = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState([]);
-  const [isUpdate, setIsUpdate] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState('');
-  const [statusForm, setStatusForm] = useState({
-    status: 'Confirmed', // Default status
-  });
+                            {!adminToken ? (
+                                <NavLink as={NavLink} to="/login" className="nav-link">
+                                    Login/SignUp
+                                </NavLink>
+                            ) : (
+                                <NavLink className="nav-link" to="/login" onClick={onLogout}>
+                                    Logout
+                                </NavLink>
+                            )}
+                            <NavDropdown title="Dropdown" id="navbarDropdown">
+                                <NavDropdown.Item href="#">Action</NavDropdown.Item>
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000); // Simulating 2 seconds loading time
-    return () => clearTimeout(timer);
-  }, []);
+                                <NavDropdown.Divider />
+                                <NavDropdown.Item href="#">Something else here</NavDropdown.Item>
+                            </NavDropdown>
+                        </Nav>
+                    </Navbar.Collapse>
+                </Navbar> :
+                <Navbar fixed="top" style={{ padding: '0 20px', minHeight: '10vh', width: '100%',backgroundColor:"#34D399" }} expand="lg" >
+                    <Navbar.Brand><Link to='/' style={{ textDecoration: 'none' }}>G-Mart</Link></Navbar.Brand>
+                    <Navbar.Toggle aria-controls="navbarSupportedContent" />
+                    <Navbar.Collapse id="navbarSupportedContent">
+                        <Nav className="mr-auto">
+                            <NavLink to="/" className="nav-link">Home</NavLink>
+                            <NavLink to="/my-cart" className="nav-link">MyCart</NavLink>
+                            <NavLink to="/my-orders" className="nav-link">Orders</NavLink>
+                            <NavLink to="/my-history" className="nav-link">History</NavLink>
 
-  useEffect(() => {
-    getData();
-  }, []);
-
-  const getData = () => {
-    axios.get('http://localhost:5100/orders')
-      .then((response) => {
-        setData(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching orders:', error);
-      });
-  };
-
-  const onSubmit = (formData) => {
-    axios.put(`http://localhost:5100/orders/${selectedOrderId}`, formData)
-      .then(() => {
-        setIsUpdate(false);
-        getData();
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  };
-
-  const onChangeStatus = (orderId) => {
-    setIsUpdate(true);
-    setSelectedOrderId(orderId);
-  };
-
-  return (
-    <div>
-      <AdminNavbar />
-      {isLoading ? (
-        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <LoaderSpinner />
+                            {!token ? (
+                                <div style={{display:"flex"}}>
+                                    <NavLink as={NavLink} to="/login" className="nav-link">
+                                  User Login 
+                                </NavLink> 
+                                <span className="nav-link">/</span>
+                                <NavLink as={NavLink} to="/alogin" className="nav-link">
+                                    Admin Login
+                                </NavLink>
+                                </div>
+                            ) : (
+                                <NavLink className="nav-link" to="/login" onClick={onLogout}>
+                                    Logout
+                                </NavLink>
+                            )}
+                        </Nav>
+                    </Navbar.Collapse>
+                </Navbar>}
         </div>
-      ) : (
-        <Container className="container">
-          <h1 className='text-center'>Orders</h1>
-          {data.length === 0 ? (
-            <div>
-              <p>No orders in your shop!</p>
-            </div>
-          ) : (
-            <div>
-              {isUpdate ? (
-                <div>
-                  <form onSubmit={(e) => { e.preventDefault(); onSubmit(statusForm); }}>
-                    <div className="form-group">
-                      <label htmlFor="statusSelect">Select Status</label>
-                      <select className="form-control" id="statusSelect" value={statusForm.status} onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                      </select>
-                    </div>
-                    <Button type="submit">Save Changes</Button>
-                  </form>
-                </div>
-              ) : null}
-              {!isUpdate && data.map((item) => (
-                <OrderCard key={item._id}>
-                  <OrderDetail><strong>Order ID:</strong> {item._id}</OrderDetail>
-                  <OrderDetail><strong>Fullname:</strong> {item.firstname} {item.lastname}</OrderDetail>
-                  <OrderDetail><strong>Phone:</strong> {item.phone}</OrderDetail>
-                  <OrderDetail><strong>Product ID:</strong> {item.productId}</OrderDetail>
-                  <OrderDetail><strong>Quantity:</strong> {item.quantity}</OrderDetail>
-                  <OrderDetail><strong>Total price:</strong> {item.price}</OrderDetail>
-                  <OrderDetail><strong>Payment Method:</strong> {item.paymentMethod}</OrderDetail>
-                  <OrderDetail><strong>Address:</strong> {item.address}</OrderDetail>
-                  <OrderDetail><strong>Created At:</strong> {item.createdAt}</OrderDetail>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <OrderDetail><strong>Status:</strong> {item.status}</OrderDetail>
-                    {item.status !== 'Canceled' && item.status !== 'Delivered' && <Button onClick={() => onChangeStatus(item._id)} disabled={item.status === 'Delivered'}>Update Status</Button>}
-                    {item.status === 'Canceled' && <Button disabled={item.status === 'Canceled'}>Customer Canceled</Button>}
-                    {item.status === 'Delivered' && <Button disabled={item.status === 'Delivered'}>Delivered</Button>}
-                  </div>
-                </OrderCard>
-              ))}
-            </div>
-          )}
-        </Container>
-      )}
-    </div>
-  );
+    );
 };
 
-export default Orders;
+export default Header;

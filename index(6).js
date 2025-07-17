@@ -1,79 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components'; 
-import ProductItem from '../ProductItem';
-import Cookies from 'js-cookies';
-import axios from 'axios';
-import AdminNavabar from '../AdminNavbar';
 
-const ProductsContainer = styled.div`
-  margin-top: 4vh;
-  padding: 20px;
-  text-align: start;
-`;
+import React from 'react';
+import { HomeContainer,Container,CenteredRow,ContentColumn,Heading ,Paragraph,PrimaryButton} from "./styledComponents";
+import { Link } from 'react-router-dom';
+import Footer from '../Footer';
+import About from '../About';
+import ContactUs from '../Contact';
+import Header from '../Header';
 
-const Heading = styled.h2`
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 20px;
-  margin-top: 40px;
-  text-align: center;
-`;
-
-const StyledList = styled.ul`
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr); // Display 4 items in each row
-  gap: 20px;
-  padding: 0;
-`;
-
-
-const AdminProducts = () => {
-  const api = 'http://localhost:5100/products';
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    getData();
-  }, []);
-
-  const getData = () => {
-    fetch(api)
-      .then(response => response.json())
-      .then(data => setProducts(data))
-      .catch(error => console.error('Error fetching products:', error));
-  };
-
-  const handleDeleteProduct = async (id) => {
-    const userId = Cookies.getItem("userId"); 
-    try {
-      await axios.delete(`http://localhost:5100/products/${id}`);
-      getData();
-    } catch (error) {
-      console.error("Error deleting product:", error);
-    }
+const Home = () => {
+  const onShop = () => {
+    // Add your logic for the "Shop Now" button click
+    console.log('Shop Now clicked');
   };
 
   return (
     <div>
-      <AdminNavabar />
-      <h1 className='text-center'>Products</h1>
-      <ProductsContainer>
-        <StyledList>
-          {products.map(product => (
-            <ProductItem
-              key={product._id}
-              id={product._id}
-              img={product.image}
-              name={product.productname}
-              description={product.description}
-              price={product.price}
-              handleDeleteProduct={handleDeleteProduct}
-            />
-          ))}
-        </StyledList>
-      </ProductsContainer>
+      <Header/>
+      <HomeContainer className="home-container" src="https://img.freepik.com/free-vector/online-grocery-store-banner-design_23-2150089535.jpg?size=626&ext=jpg&ga=GA1.1.1700460183.1712534400&semt=ais">
+      <Container>
+        
+        <CenteredRow>
+          <ContentColumn>
+            {/* <img src='https://img.freepik.com/free-vector/online-grocery-store-banner-design_23-2150089535.jpg?size=626&ext=jpg&ga=GA1.1.1700460183.1712534400&semt=ais' /> */}
+            <Heading>Welcome to Our Grocery Web App</Heading>
+            <Paragraph>Discover a wide range of Grocery's and Fresh Items for all your needs</Paragraph>
+            <PrimaryButton> <Link to='/shopping' style={{textDecoration:'none',color:'white',fontWeight:'bolder'}}>Shop Now</Link> </PrimaryButton>
+          </ContentColumn>
+        </CenteredRow>
+      </Container>
+    </HomeContainer>
+    <About/>
+    <ContactUs/>
+    <Footer/>
     </div>
   );
-};
+}
 
-export default AdminProducts;
+export default Home;
